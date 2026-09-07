@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Portfolio
 
-## Getting Started
+Personal portfolio built with Next.js (App Router), Tailwind CSS, and a local
+SQLite database. All content shown on the site (profile, experience,
+projects, skills, education, certifications) lives in `data/portfolio.db`
+and is edited through a password-protected dashboard at `/dashboard`.
 
-First, run the development server:
+### Getting started
 
 ```bash
+npm install
+cp .env.example .env.local   # then edit ADMIN_PASSWORD and SESSION_SECRET
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 for the public site and
+http://localhost:3000/dashboard to sign in and edit content.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The SQLite database is created automatically on first run at
+`data/portfolio.db` and seeded with the content already in this repo. It is
+gitignored, so it's local to each machine/deploy — back it up if you care
+about not re-seeding.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### How content updates work
 
-## Learn More
+Every dashboard save runs a plain SQL statement against `data/portfolio.db`
+and then calls `revalidatePath("/")`, so the public homepage always reflects
+the latest saved data on the next request — no rebuild needed.
 
-To learn more about Next.js, take a look at the following resources:
+### Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `lib/db.ts` — SQLite connection, schema, and one-time seed data.
+- `lib/queries.ts` — typed read helpers used by the public site.
+- `app/dashboard/actions.ts` — all Server Actions (auth + CRUD) used by the dashboard.
+- `app/dashboard/(panel)/*` — the protected dashboard pages (profile, experience, projects, skills, education).
+- `app/dashboard/login` — the sign-in page (outside the protected route group).
+- `proxy.ts` — gates every `/dashboard/*` route except `/dashboard/login` behind a signed session cookie.
+- `components/*` — the public site's sections (Hero, Experience, Projects, Skills, Education, Contact).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Deploying
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Because content is a local SQLite file, deploy this to a host with a
+persistent filesystem (a VPS, Docker container, Fly.io, Railway, etc.) rather
+than a stateless serverless platform — otherwise writes made through the
+dashboard won't survive a redeploy/restart.
