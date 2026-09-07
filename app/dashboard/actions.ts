@@ -65,23 +65,24 @@ export async function logout() {
 // ---------- Profile ----------
 
 export async function updateProfile(formData: FormData) {
-  const db = getDb();
-  db.prepare(
-    `UPDATE profile SET name=@name, title=@title, tagline=@tagline, bio=@bio,
-     location=@location, email=@email, phone=@phone,
-     linkedin_url=@linkedin_url, github_url=@github_url, resume_url=@resume_url
-     WHERE id = 1`
-  ).run({
-    name: str(formData, "name"),
-    title: str(formData, "title"),
-    tagline: str(formData, "tagline"),
-    bio: str(formData, "bio"),
-    location: str(formData, "location"),
-    email: str(formData, "email"),
-    phone: str(formData, "phone"),
-    linkedin_url: str(formData, "linkedin_url"),
-    github_url: str(formData, "github_url"),
-    resume_url: str(formData, "resume_url"),
+  const db = await getDb();
+  await db.execute({
+    sql: `UPDATE profile SET name=:name, title=:title, tagline=:tagline, bio=:bio,
+          location=:location, email=:email, phone=:phone,
+          linkedin_url=:linkedin_url, github_url=:github_url, resume_url=:resume_url
+          WHERE id = 1`,
+    args: {
+      name: str(formData, "name"),
+      title: str(formData, "title"),
+      tagline: str(formData, "tagline"),
+      bio: str(formData, "bio"),
+      location: str(formData, "location"),
+      email: str(formData, "email"),
+      phone: str(formData, "phone"),
+      linkedin_url: str(formData, "linkedin_url"),
+      github_url: str(formData, "github_url"),
+      resume_url: str(formData, "resume_url"),
+    },
   });
   revalidatePath("/");
   revalidatePath("/dashboard/profile");
@@ -90,9 +91,9 @@ export async function updateProfile(formData: FormData) {
 // ---------- Experience ----------
 
 export async function upsertExperience(formData: FormData) {
-  const db = getDb();
+  const db = await getDb();
   const id = str(formData, "id");
-  const data = {
+  const args = {
     company: str(formData, "company"),
     role: str(formData, "role"),
     start_date: str(formData, "start_date"),
@@ -103,24 +104,29 @@ export async function upsertExperience(formData: FormData) {
   };
 
   if (id) {
-    db.prepare(
-      `UPDATE experience SET company=@company, role=@role, start_date=@start_date,
-       end_date=@end_date, tech_tags=@tech_tags, bullets=@bullets, sort_order=@sort_order
-       WHERE id = @id`
-    ).run({ ...data, id });
-  } else if (data.company) {
-    db.prepare(
-      `INSERT INTO experience (company, role, start_date, end_date, tech_tags, bullets, sort_order)
-       VALUES (@company, @role, @start_date, @end_date, @tech_tags, @bullets, @sort_order)`
-    ).run(data);
+    await db.execute({
+      sql: `UPDATE experience SET company=:company, role=:role, start_date=:start_date,
+            end_date=:end_date, tech_tags=:tech_tags, bullets=:bullets, sort_order=:sort_order
+            WHERE id = :id`,
+      args: { ...args, id },
+    });
+  } else if (args.company) {
+    await db.execute({
+      sql: `INSERT INTO experience (company, role, start_date, end_date, tech_tags, bullets, sort_order)
+            VALUES (:company, :role, :start_date, :end_date, :tech_tags, :bullets, :sort_order)`,
+      args,
+    });
   }
   revalidatePath("/");
   revalidatePath("/dashboard/experience");
 }
 
 export async function deleteExperience(formData: FormData) {
-  const db = getDb();
-  db.prepare("DELETE FROM experience WHERE id = ?").run(str(formData, "id"));
+  const db = await getDb();
+  await db.execute({
+    sql: "DELETE FROM experience WHERE id = :id",
+    args: { id: str(formData, "id") },
+  });
   revalidatePath("/");
   revalidatePath("/dashboard/experience");
 }
@@ -128,9 +134,9 @@ export async function deleteExperience(formData: FormData) {
 // ---------- Projects ----------
 
 export async function upsertProject(formData: FormData) {
-  const db = getDb();
+  const db = await getDb();
   const id = str(formData, "id");
-  const data = {
+  const args = {
     title: str(formData, "title"),
     subtitle: str(formData, "subtitle"),
     category: str(formData, "category"),
@@ -142,24 +148,29 @@ export async function upsertProject(formData: FormData) {
   };
 
   if (id) {
-    db.prepare(
-      `UPDATE projects SET title=@title, subtitle=@subtitle, category=@category,
-       tech_tags=@tech_tags, bullets=@bullets, link_url=@link_url,
-       featured=@featured, sort_order=@sort_order WHERE id = @id`
-    ).run({ ...data, id });
-  } else if (data.title) {
-    db.prepare(
-      `INSERT INTO projects (title, subtitle, category, tech_tags, bullets, link_url, featured, sort_order)
-       VALUES (@title, @subtitle, @category, @tech_tags, @bullets, @link_url, @featured, @sort_order)`
-    ).run(data);
+    await db.execute({
+      sql: `UPDATE projects SET title=:title, subtitle=:subtitle, category=:category,
+            tech_tags=:tech_tags, bullets=:bullets, link_url=:link_url,
+            featured=:featured, sort_order=:sort_order WHERE id = :id`,
+      args: { ...args, id },
+    });
+  } else if (args.title) {
+    await db.execute({
+      sql: `INSERT INTO projects (title, subtitle, category, tech_tags, bullets, link_url, featured, sort_order)
+            VALUES (:title, :subtitle, :category, :tech_tags, :bullets, :link_url, :featured, :sort_order)`,
+      args,
+    });
   }
   revalidatePath("/");
   revalidatePath("/dashboard/projects");
 }
 
 export async function deleteProject(formData: FormData) {
-  const db = getDb();
-  db.prepare("DELETE FROM projects WHERE id = ?").run(str(formData, "id"));
+  const db = await getDb();
+  await db.execute({
+    sql: "DELETE FROM projects WHERE id = :id",
+    args: { id: str(formData, "id") },
+  });
   revalidatePath("/");
   revalidatePath("/dashboard/projects");
 }
@@ -167,30 +178,35 @@ export async function deleteProject(formData: FormData) {
 // ---------- Skills ----------
 
 export async function upsertSkill(formData: FormData) {
-  const db = getDb();
+  const db = await getDb();
   const id = str(formData, "id");
-  const data = {
+  const args = {
     category: str(formData, "category"),
     name: str(formData, "name"),
     sort_order: Number(str(formData, "sort_order")) || 0,
   };
 
   if (id) {
-    db.prepare(
-      `UPDATE skills SET category=@category, name=@name, sort_order=@sort_order WHERE id = @id`
-    ).run({ ...data, id });
-  } else if (data.name && data.category) {
-    db.prepare(
-      `INSERT INTO skills (category, name, sort_order) VALUES (@category, @name, @sort_order)`
-    ).run(data);
+    await db.execute({
+      sql: `UPDATE skills SET category=:category, name=:name, sort_order=:sort_order WHERE id = :id`,
+      args: { ...args, id },
+    });
+  } else if (args.name && args.category) {
+    await db.execute({
+      sql: `INSERT INTO skills (category, name, sort_order) VALUES (:category, :name, :sort_order)`,
+      args,
+    });
   }
   revalidatePath("/");
   revalidatePath("/dashboard/skills");
 }
 
 export async function deleteSkill(formData: FormData) {
-  const db = getDb();
-  db.prepare("DELETE FROM skills WHERE id = ?").run(str(formData, "id"));
+  const db = await getDb();
+  await db.execute({
+    sql: "DELETE FROM skills WHERE id = :id",
+    args: { id: str(formData, "id") },
+  });
   revalidatePath("/");
   revalidatePath("/dashboard/skills");
 }
@@ -198,9 +214,9 @@ export async function deleteSkill(formData: FormData) {
 // ---------- Education ----------
 
 export async function upsertEducation(formData: FormData) {
-  const db = getDb();
+  const db = await getDb();
   const id = str(formData, "id");
-  const data = {
+  const args = {
     degree: str(formData, "degree"),
     institution: str(formData, "institution"),
     start_year: str(formData, "start_year"),
@@ -209,23 +225,28 @@ export async function upsertEducation(formData: FormData) {
   };
 
   if (id) {
-    db.prepare(
-      `UPDATE education SET degree=@degree, institution=@institution,
-       start_year=@start_year, end_year=@end_year, sort_order=@sort_order WHERE id = @id`
-    ).run({ ...data, id });
-  } else if (data.degree) {
-    db.prepare(
-      `INSERT INTO education (degree, institution, start_year, end_year, sort_order)
-       VALUES (@degree, @institution, @start_year, @end_year, @sort_order)`
-    ).run(data);
+    await db.execute({
+      sql: `UPDATE education SET degree=:degree, institution=:institution,
+            start_year=:start_year, end_year=:end_year, sort_order=:sort_order WHERE id = :id`,
+      args: { ...args, id },
+    });
+  } else if (args.degree) {
+    await db.execute({
+      sql: `INSERT INTO education (degree, institution, start_year, end_year, sort_order)
+            VALUES (:degree, :institution, :start_year, :end_year, :sort_order)`,
+      args,
+    });
   }
   revalidatePath("/");
   revalidatePath("/dashboard/education");
 }
 
 export async function deleteEducation(formData: FormData) {
-  const db = getDb();
-  db.prepare("DELETE FROM education WHERE id = ?").run(str(formData, "id"));
+  const db = await getDb();
+  await db.execute({
+    sql: "DELETE FROM education WHERE id = :id",
+    args: { id: str(formData, "id") },
+  });
   revalidatePath("/");
   revalidatePath("/dashboard/education");
 }
@@ -233,9 +254,9 @@ export async function deleteEducation(formData: FormData) {
 // ---------- Certifications ----------
 
 export async function upsertCertification(formData: FormData) {
-  const db = getDb();
+  const db = await getDb();
   const id = str(formData, "id");
-  const data = {
+  const args = {
     name: str(formData, "name"),
     provider: str(formData, "provider"),
     period: str(formData, "period"),
@@ -243,23 +264,28 @@ export async function upsertCertification(formData: FormData) {
   };
 
   if (id) {
-    db.prepare(
-      `UPDATE certifications SET name=@name, provider=@provider,
-       period=@period, sort_order=@sort_order WHERE id = @id`
-    ).run({ ...data, id });
-  } else if (data.name) {
-    db.prepare(
-      `INSERT INTO certifications (name, provider, period, sort_order)
-       VALUES (@name, @provider, @period, @sort_order)`
-    ).run(data);
+    await db.execute({
+      sql: `UPDATE certifications SET name=:name, provider=:provider,
+            period=:period, sort_order=:sort_order WHERE id = :id`,
+      args: { ...args, id },
+    });
+  } else if (args.name) {
+    await db.execute({
+      sql: `INSERT INTO certifications (name, provider, period, sort_order)
+            VALUES (:name, :provider, :period, :sort_order)`,
+      args,
+    });
   }
   revalidatePath("/");
   revalidatePath("/dashboard/education");
 }
 
 export async function deleteCertification(formData: FormData) {
-  const db = getDb();
-  db.prepare("DELETE FROM certifications WHERE id = ?").run(str(formData, "id"));
+  const db = await getDb();
+  await db.execute({
+    sql: "DELETE FROM certifications WHERE id = :id",
+    args: { id: str(formData, "id") },
+  });
   revalidatePath("/");
   revalidatePath("/dashboard/education");
 }

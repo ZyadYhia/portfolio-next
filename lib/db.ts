@@ -1,37 +1,49 @@
-import { DatabaseSync } from "node:sqlite";
+import { createClient, type Client } from "@libsql/client";
 import path from "node:path";
 import fs from "node:fs";
 
-// Uses Node's built-in `node:sqlite` (stable since Node 22) instead of a
-// native npm package like better-sqlite3. That avoids shipping a
-// platform-specific compiled binary — which matters here because this repo
-// is edited from a sandboxed Linux environment but runs on macOS: an
-// npm-installed native module would be built for the wrong OS/architecture
-// and crash the process the moment it's loaded. node:sqlite ships inside
-// the Node binary itself, so it always matches the platform it runs on.
+// Uses libSQL (the SQLite-compatible engine behind Turso) instead of a
+// locally-compiled native module. Two reasons:
+//
+// 1. A native module like better-sqlite3 has to be compiled for a specific
+//    OS/architecture. This repo is edited from a sandboxed Linux
+//    environment but runs on macOS, so an npm-installed native binary would
+//    be built for the wrong platform and crash the process on load.
+// 2. Vercel's serverless functions have no persistent, writable disk, so a
+//    local SQLite *file* can't be the source of truth in production —
+//    dashboard edits would vanish on the next request.
+//
+// @libsql/client solves both: locally (no TURSO_DATABASE_URL set) it opens
+// a plain SQLite file on disk with zero setup, identical to before. In
+// production, pointing it at a Turso database (a hosted, persistent
+// libSQL instance) makes dashboard writes durable across requests and
+// deploys — same code path either way, just a different connection URL.
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DATA_DIR, "portfolio.db");
+const TURSO_URL = process.env.TURSO_DATABASE_URL;
+const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
 
 declare global {
   // eslint-disable-next-line no-var
-  var __portfolioDb: DatabaseSync | undefined;
+  var __portfolioDb: Client | undefined;
+  // eslint-disable-next-line no-var
+  var __portfolioDbReady: Promise<Client> | undefined;
 }
 
-function createConnection() {
+function createConnection(): Client {
+  if (TURSO_URL) {
+    return createClient({ url: TURSO_URL, authToken: TURSO_AUTH_TOKEN });
+  }
+
+  const DATA_DIR = path.join(process.cwd(), "data");
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
-  const db = new DatabaseSync(DB_PATH);
-  db.exec("PRAGMA journal_mode = WAL");
-  db.exec("PRAGMA foreign_keys = ON");
-  migrate(db);
-  seedIfEmpty(db);
-  return db;
+  const DB_PATH = path.join(DATA_DIR, "portfolio.db");
+  return createClient({ url: `file:${DB_PATH}` });
 }
 
-function migrate(db: DatabaseSync) {
-  db.exec(`
+async function migrate(db: Client) {
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS profile (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       name TEXT NOT NULL DEFAULT '',
@@ -95,33 +107,28 @@ function migrate(db: DatabaseSync) {
   `);
 }
 
-function seedIfEmpty(db: DatabaseSync) {
-  const row = db.prepare("SELECT COUNT(*) as n FROM profile").get() as {
-    n: number;
-  };
-  if (row.n > 0) return;
+async function seedIfEmpty(db: Client) {
+  const countResult = await db.execute("SELECT COUNT(*) as n FROM profile");
+  const n = Number(countResult.rows[0]?.n ?? 0);
+  if (n > 0) return;
 
-  const insertProfile = db.prepare(`
-    INSERT INTO profile (id, name, title, tagline, bio, location, email, phone, linkedin_url, github_url, resume_url)
-    VALUES (1, @name, @title, @tagline, @bio, @location, @email, @phone, @linkedin_url, @github_url, @resume_url)
-  `);
-  insertProfile.run({
-    name: "Zyad Yhia Zakaria",
-    title: "Full-Stack Software Engineer",
-    tagline: "React · Laravel · ASP.NET Core",
-    bio: "Full-stack software engineer with 6+ years across product companies, agencies, and embedded systems. Currently building HR products in React/TypeScript at JisrHR, with backend depth in PHP/Laravel and C#/ASP.NET Core (Web API, EF Core, Identity/JWT) gained through freelance and independent projects. Comfortable owning features end-to-end — from requirements and API design to UI, testing, and deployment.",
-    location: "Cairo, Egypt",
-    email: "zyad.yhia.sw@gmail.com",
-    phone: "+2 (010) 0240 1163",
-    linkedin_url: "https://linkedin.com/in/zyad-yhia",
-    github_url: "https://github.com/ZyadYhia",
-    resume_url: "",
+  await db.execute({
+    sql: `INSERT INTO profile (id, name, title, tagline, bio, location, email, phone, linkedin_url, github_url, resume_url)
+          VALUES (1, :name, :title, :tagline, :bio, :location, :email, :phone, :linkedin_url, :github_url, :resume_url)`,
+    args: {
+      name: "Zyad Yhia Zakaria",
+      title: "Full-Stack Software Engineer",
+      tagline: "React · Laravel · ASP.NET Core",
+      bio: "Full-stack software engineer with 6+ years across product companies, agencies, and embedded systems. Currently building HR products in React/TypeScript at JisrHR, with backend depth in PHP/Laravel and C#/ASP.NET Core (Web API, EF Core, Identity/JWT) gained through freelance and independent projects. Comfortable owning features end-to-end — from requirements and API design to UI, testing, and deployment.",
+      location: "Cairo, Egypt",
+      email: "zyad.yhia.sw@gmail.com",
+      phone: "+2 (010) 0240 1163",
+      linkedin_url: "https://linkedin.com/in/zyad-yhia",
+      github_url: "https://github.com/ZyadYhia",
+      resume_url: "",
+    },
   });
 
-  const insertExperience = db.prepare(`
-    INSERT INTO experience (company, role, start_date, end_date, tech_tags, bullets, sort_order)
-    VALUES (@company, @role, @start_date, @end_date, @tech_tags, @bullets, @sort_order)
-  `);
   const experience = [
     {
       company: "JisrHR",
@@ -192,19 +199,22 @@ function seedIfEmpty(db: DatabaseSync) {
       ],
     },
   ];
-  experience.forEach((e, i) =>
-    insertExperience.run({
-      ...e,
-      tech_tags: JSON.stringify(e.tech_tags),
-      bullets: JSON.stringify(e.bullets),
-      sort_order: i,
-    })
-  );
+  for (const [i, e] of experience.entries()) {
+    await db.execute({
+      sql: `INSERT INTO experience (company, role, start_date, end_date, tech_tags, bullets, sort_order)
+            VALUES (:company, :role, :start_date, :end_date, :tech_tags, :bullets, :sort_order)`,
+      args: {
+        company: e.company,
+        role: e.role,
+        start_date: e.start_date,
+        end_date: e.end_date,
+        tech_tags: JSON.stringify(e.tech_tags),
+        bullets: JSON.stringify(e.bullets),
+        sort_order: i,
+      },
+    });
+  }
 
-  const insertProject = db.prepare(`
-    INSERT INTO projects (title, subtitle, category, tech_tags, bullets, link_url, featured, sort_order)
-    VALUES (@title, @subtitle, @category, @tech_tags, @bullets, @link_url, @featured, @sort_order)
-  `);
   const projects = [
     {
       title: "Automotive Services Platform",
@@ -242,19 +252,23 @@ function seedIfEmpty(db: DatabaseSync) {
       featured: 0,
     },
   ];
-  projects.forEach((p, i) =>
-    insertProject.run({
-      ...p,
-      tech_tags: JSON.stringify(p.tech_tags),
-      bullets: JSON.stringify(p.bullets),
-      link_url: "",
-      sort_order: i,
-    })
-  );
+  for (const [i, p] of projects.entries()) {
+    await db.execute({
+      sql: `INSERT INTO projects (title, subtitle, category, tech_tags, bullets, link_url, featured, sort_order)
+            VALUES (:title, :subtitle, :category, :tech_tags, :bullets, :link_url, :featured, :sort_order)`,
+      args: {
+        title: p.title,
+        subtitle: p.subtitle,
+        category: p.category,
+        tech_tags: JSON.stringify(p.tech_tags),
+        bullets: JSON.stringify(p.bullets),
+        link_url: "",
+        featured: p.featured,
+        sort_order: i,
+      },
+    });
+  }
 
-  const insertSkill = db.prepare(`
-    INSERT INTO skills (category, name, sort_order) VALUES (@category, @name, @sort_order)
-  `);
   const skills: [string, string][] = [
     ["Frontend", "React / Next.js"],
     ["Frontend", "Vue.js / Quasar"],
@@ -282,26 +296,25 @@ function seedIfEmpty(db: DatabaseSync) {
     ["Tools", "Jira"],
     ["Tools", "Mantis"],
   ];
-  skills.forEach(([category, name], i) =>
-    insertSkill.run({ category, name, sort_order: i })
-  );
+  for (const [i, [category, name]] of skills.entries()) {
+    await db.execute({
+      sql: `INSERT INTO skills (category, name, sort_order) VALUES (:category, :name, :sort_order)`,
+      args: { category, name, sort_order: i },
+    });
+  }
 
-  const insertEducation = db.prepare(`
-    INSERT INTO education (degree, institution, start_year, end_year, sort_order)
-    VALUES (@degree, @institution, @start_year, @end_year, @sort_order)
-  `);
-  insertEducation.run({
-    degree: "B.Sc. Electrical & Communications Engineering",
-    institution: "Higher Institute of Engineering and Technology, New Damietta",
-    start_year: "2014",
-    end_year: "2019",
-    sort_order: 0,
+  await db.execute({
+    sql: `INSERT INTO education (degree, institution, start_year, end_year, sort_order)
+          VALUES (:degree, :institution, :start_year, :end_year, :sort_order)`,
+    args: {
+      degree: "B.Sc. Electrical & Communications Engineering",
+      institution: "Higher Institute of Engineering and Technology, New Damietta",
+      start_year: "2014",
+      end_year: "2019",
+      sort_order: 0,
+    },
   });
 
-  const insertCert = db.prepare(`
-    INSERT INTO certifications (name, provider, period, sort_order)
-    VALUES (@name, @provider, @period, @sort_order)
-  `);
   const certs: [string, string, string][] = [
     ["C# / ASP.NET Core", "Route Academy", "Sept – Dec 2024"],
     ["React", "Udemy (Maximilian Schwarzmüller)", "Jan – Feb 2025"],
@@ -311,14 +324,28 @@ function seedIfEmpty(db: DatabaseSync) {
     ["Go, Docker & Kubernetes", "Udemy", ""],
     ["Project Management & Risk Analysis", "Coursera / Google", ""],
   ];
-  certs.forEach(([name, provider, period], i) =>
-    insertCert.run({ name, provider, period, sort_order: i })
-  );
+  for (const [i, [name, provider, period]] of certs.entries()) {
+    await db.execute({
+      sql: `INSERT INTO certifications (name, provider, period, sort_order)
+            VALUES (:name, :provider, :period, :sort_order)`,
+      args: { name, provider, period, sort_order: i },
+    });
+  }
 }
 
-export function getDb() {
-  if (!global.__portfolioDb) {
-    global.__portfolioDb = createConnection();
+async function initConnection(): Promise<Client> {
+  const db = createConnection();
+  await migrate(db);
+  await seedIfEmpty(db);
+  return db;
+}
+
+export function getDb(): Promise<Client> {
+  if (!global.__portfolioDbReady) {
+    global.__portfolioDbReady = initConnection().then((db) => {
+      global.__portfolioDb = db;
+      return db;
+    });
   }
-  return global.__portfolioDb;
+  return global.__portfolioDbReady;
 }

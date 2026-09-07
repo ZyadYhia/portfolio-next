@@ -12,7 +12,7 @@ import { getProfile } from "@/lib/queries";
 // next/font/google, so the build never depends on reaching Google Fonts.
 
 export async function generateMetadata(): Promise<Metadata> {
-  const profile = getProfile();
+  const profile = await getProfile();
   return {
     title: `${profile.name || "Portfolio"} — ${profile.title || "Software Engineer"}`,
     description: profile.tagline || profile.bio,

@@ -9,13 +9,21 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardOverview() {
+export default async function DashboardOverview() {
+  const [experience, projects, skills, education, certifications] = await Promise.all([
+    getExperience(),
+    getProjects(),
+    getSkills(),
+    getEducation(),
+    getCertifications(),
+  ]);
+
   const stats = [
-    { label: "Experience entries", value: getExperience().length, href: "/dashboard/experience" },
-    { label: "Projects", value: getProjects().length, href: "/dashboard/projects" },
-    { label: "Skills", value: getSkills().length, href: "/dashboard/skills" },
-    { label: "Education entries", value: getEducation().length, href: "/dashboard/education" },
-    { label: "Certifications", value: getCertifications().length, href: "/dashboard/education" },
+    { label: "Experience entries", value: experience.length, href: "/dashboard/experience" },
+    { label: "Projects", value: projects.length, href: "/dashboard/projects" },
+    { label: "Skills", value: skills.length, href: "/dashboard/skills" },
+    { label: "Education entries", value: education.length, href: "/dashboard/education" },
+    { label: "Certifications", value: certifications.length, href: "/dashboard/education" },
   ];
 
   return (

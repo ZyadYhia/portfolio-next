@@ -19,13 +19,16 @@ import {
 // always reads fresh data instead of being statically cached.
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const profile = getProfile();
-  const experience = getExperience();
-  const projects = getProjects();
-  const skillsByCategory = getSkillsByCategory();
-  const education = getEducation();
-  const certifications = getCertifications();
+export default async function Home() {
+  const [profile, experience, projects, skillsByCategory, education, certifications] =
+    await Promise.all([
+      getProfile(),
+      getExperience(),
+      getProjects(),
+      getSkillsByCategory(),
+      getEducation(),
+      getCertifications(),
+    ]);
 
   return (
     <>
