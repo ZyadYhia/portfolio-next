@@ -9,7 +9,7 @@ export default function Skills({
   if (categories.length === 0) return null;
 
   return (
-    <section id="skills" className="mx-auto max-w-5xl px-6 py-16">
+    <section id="skills" className="mx-auto w-full lg:w-[70%] px-6 py-16">
       <h2 className="font-display text-2xl font-bold text-[var(--color-fg)] sm:text-3xl">
         Skills
       </h2>

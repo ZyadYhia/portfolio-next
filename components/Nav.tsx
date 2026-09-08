@@ -9,7 +9,7 @@ const LINKS = [
 export default function Nav({ name }: { name: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/90 backdrop-blur">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+      <nav className="mx-auto flex w-full lg:w-[70%] items-center justify-between px-6 py-4">
         <a
           href="#top"
           className="font-display text-sm font-bold tracking-tight text-[var(--color-fg)]"

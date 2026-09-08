@@ -2,7 +2,7 @@ import type { Profile } from "@/lib/queries";
 
 export default function Contact({ profile }: { profile: Profile }) {
   return (
-    <section id="contact" className="mx-auto max-w-5xl px-6 py-20">
+    <section id="contact" className="mx-auto w-full lg:w-[70%] px-6 py-20">
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center">
         <h2 className="font-display text-2xl font-bold text-[var(--color-fg)] sm:text-3xl">
           Let&apos;s work together

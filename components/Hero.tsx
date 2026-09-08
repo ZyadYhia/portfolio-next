@@ -2,7 +2,7 @@ import type { Profile } from "@/lib/queries";
 
 export default function Hero({ profile }: { profile: Profile }) {
   return (
-    <section id="top" className="mx-auto max-w-5xl px-6 pb-16 pt-20 sm:pt-28">
+    <section id="top" className="mx-auto w-full lg:w-[70%] px-6 pb-16 pt-20 sm:pt-28">
       <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-[var(--color-teal)]">
         {profile.location || "Software Engineer"}
       </p>

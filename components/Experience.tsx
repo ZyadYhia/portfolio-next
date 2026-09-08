@@ -4,7 +4,7 @@ export default function Experience({ items }: { items: ExperienceType[] }) {
   if (items.length === 0) return null;
 
   return (
-    <section id="experience" className="mx-auto max-w-5xl px-6 py-16">
+    <section id="experience" className="mx-auto w-full lg:w-[70%] px-6 py-16">
       <h2 className="font-display text-2xl font-bold text-[var(--color-fg)] sm:text-3xl">
         Experience
       </h2>
