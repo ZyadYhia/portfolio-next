@@ -25,6 +25,27 @@ export default function Hero({ profile }: { readonly profile: Profile }) {
         >
           Get in touch
         </a>
+        <a
+          href="/Zyad_Yhia_CV.pdf"
+          download="Zyad_Yhia_CV.pdf"
+          className="inline-flex items-center gap-2 rounded-md border border-(--color-border) px-5 py-2.5 text-sm font-medium text-foreground transition hover:border-(--color-teal) hover:text-(--color-teal) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-teal)"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-5 shrink-0"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M12 3v12m-5-5 5 5 5-5M5 16v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4" />
+          </svg>
+          Download CV
+        </a>
         {profile.github_url ? (
           <a
             href={profile.github_url}
