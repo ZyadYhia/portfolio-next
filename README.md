@@ -51,6 +51,27 @@ no rebuild or redeploy needed for content edits.
 
 ### How content updates work
 
+#### CV uploads
+
+In **Dashboard → Profile → Your CV**, upload a PDF (maximum 3 MB).
+The PDF is stored in Vercel Blob and its URL is saved in `profile.resume_url`.
+The public Download CV button uses `/cv`, which reads the current URL on every
+request and serves it as a download. The bundled CV remains the default until
+the first upload. Saving other profile fields preserves the uploaded CV.
+
+Before deploying uploads, create a **public Blob store** in your Vercel
+project's Storage tab and connect it to the deployment environments you use.
+This adds `BLOB_READ_WRITE_TOKEN`; redeploy after connecting the store.
+Keep the token server-side (never prefix it with `NEXT_PUBLIC_`). See
+[Vercel's setup guide](https://vercel.com/docs/vercel-blob/server-upload).
+
+Local development without a Blob token stores PDFs in the gitignored
+`data/cv` directory. Set `CV_STORAGE_DIR` to use another persistent directory.
+Local files are not deployed: upload again after connecting the production
+Blob store. Use separate development and production databases when testing
+local uploads. Vercel uploads require Blob and never fall back to temporary disk.
+Previous CV files are retained; a failed upload leaves the active CV unchanged.
+
 Every dashboard save runs a SQL statement against the database and then
 calls `revalidatePath("/")`, so the public homepage always reflects the
 latest saved data on the next request.

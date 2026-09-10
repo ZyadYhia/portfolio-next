@@ -28,6 +28,7 @@ export default function Contact({ profile }: { readonly profile: Profile }) {
               aria-label={`Chat on WhatsApp at ${profile.phone}`}
               className="inline-flex items-center gap-2 rounded-md border border-(--color-border) px-5 py-2.5 text-sm text-foreground transition-colors hover:border-(--color-amber) hover:text-(--color-amber) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-amber)"
             >
+              
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
