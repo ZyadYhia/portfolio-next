@@ -6,7 +6,7 @@ export default function Projects({ items }: { items: Project[] }) {
 
   return (
     <section id="projects" className="mx-auto w-full lg:w-[70%] px-6 py-16">
-      <h2 className="font-display text-2xl font-bold text-[var(--color-fg)] sm:text-3xl">
+      <h2 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
         Projects
       </h2>
       <div className="mt-8 grid gap-6 sm:grid-cols-2">

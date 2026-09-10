@@ -29,7 +29,7 @@ export default async function DashboardOverview() {
   return (
     <div>
       <h1 className="font-display text-2xl font-bold">Overview</h1>
-      <p className="mt-1 text-sm text-[var(--color-muted)]">
+      <p className="mt-1 text-sm text-(--color-muted)">
         Everything here is stored in the local SQLite database and reflected on
         the live site immediately after you save.
       </p>
@@ -38,10 +38,10 @@ export default async function DashboardOverview() {
           <Link
             key={stat.label}
             href={stat.href}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-teal)]/50"
+            className="rounded-lg border border-(--color-border) bg-(--color-surface) p-5 transition hover:border-(--color-teal)/50"
           >
-            <p className="text-3xl font-bold text-[var(--color-fg)]">{stat.value}</p>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">{stat.label}</p>
+            <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+            <p className="mt-1 text-sm text-(--color-muted)">{stat.label}</p>
           </Link>
         ))}
       </div>

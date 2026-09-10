@@ -4,8 +4,8 @@ import { updateProfile } from "../../actions";
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "w-full rounded-md border border-[var(--color-border)] bg-black/30 px-3 py-2 text-sm text-[var(--color-fg)] outline-none focus:border-[var(--color-amber)]";
-const labelClass = "text-xs uppercase tracking-wide text-[var(--color-muted)]";
+  "w-full rounded-md border border-(--color-border) bg-black/30 px-3 py-2 text-sm text-foreground outline-none focus:border-(--color-amber)";
+const labelClass = "text-xs uppercase tracking-wide text-(--color-muted)";
 
 export default async function ProfilePage() {
   const profile = await getProfile();
@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-2xl">
       <h1 className="font-display text-2xl font-bold">Profile</h1>
-      <p className="mt-1 text-sm text-[var(--color-muted)]">
+      <p className="mt-1 text-sm text-(--color-muted)">
         This information powers the hero section and contact links.
       </p>
 
@@ -68,7 +68,7 @@ export default async function ProfilePage() {
 
         <button
           type="submit"
-          className="rounded-md bg-[var(--color-amber)] px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-90"
+          className="rounded-md bg-(--color-amber) px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-90"
         >
           Save changes
         </button>

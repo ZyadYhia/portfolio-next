@@ -23,6 +23,13 @@
 
 html {
   font-size: 17.5px;
+  scroll-padding-top: 4rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {

@@ -4,8 +4,8 @@ import { upsertProject, deleteProject } from "../../actions";
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "w-full rounded-md border border-[var(--color-border)] bg-black/30 px-3 py-2 text-sm text-[var(--color-fg)] outline-none focus:border-[var(--color-amber)]";
-const labelClass = "text-xs uppercase tracking-wide text-[var(--color-muted)]";
+  "w-full rounded-md border border-(--color-border) bg-black/30 px-3 py-2 text-sm text-foreground outline-none focus:border-(--color-amber)";
+const labelClass = "text-xs uppercase tracking-wide text-(--color-muted)";
 
 export default async function ProjectsPage() {
   const items = await getProjects();
@@ -13,7 +13,7 @@ export default async function ProjectsPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="font-display text-2xl font-bold">Projects</h1>
-      <p className="mt-1 text-sm text-[var(--color-muted)]">
+      <p className="mt-1 text-sm text-(--color-muted)">
         Bullets: one per line. Tags: comma-separated. Link is optional.
       </p>
 
@@ -22,7 +22,7 @@ export default async function ProjectsPage() {
           <form
             key={item.id}
             action={upsertProject}
-            className="space-y-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
+            className="space-y-4 rounded-lg border border-(--color-border) bg-(--color-surface) p-5"
           >
             <input type="hidden" name="id" value={item.id} />
             <div className="grid gap-4 sm:grid-cols-2">
@@ -62,7 +62,7 @@ export default async function ProjectsPage() {
                     className={`${inputClass} w-24`}
                   />
                 </div>
-                <label className="flex items-center gap-2 text-sm text-[var(--color-fg)]">
+                <label className="flex items-center gap-2 text-sm text-foreground">
                   <input type="checkbox" name="featured" defaultChecked={item.featured} />
                   Featured
                 </label>
@@ -70,14 +70,14 @@ export default async function ProjectsPage() {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="rounded-md bg-[var(--color-amber)] px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+                  className="rounded-md bg-(--color-amber) px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
                 >
                   Save
                 </button>
                 <button
                   type="submit"
                   formAction={deleteProject}
-                  className="rounded-md border border-[var(--color-border)] px-4 py-2 text-sm text-red-400 transition hover:border-red-400"
+                  className="rounded-md border border-(--color-border) px-4 py-2 text-sm text-red-400 transition hover:border-red-400"
                 >
                   Delete
                 </button>
@@ -91,7 +91,7 @@ export default async function ProjectsPage() {
         <h2 className="font-display text-lg font-bold">Add new</h2>
         <form
           action={upsertProject}
-          className="mt-4 space-y-4 rounded-lg border border-dashed border-[var(--color-border)] p-5"
+          className="mt-4 space-y-4 rounded-lg border border-dashed border-(--color-border) p-5"
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -124,14 +124,14 @@ export default async function ProjectsPage() {
               <label className={labelClass}>Sort order</label>
               <input name="sort_order" type="number" defaultValue={items.length} className={`${inputClass} w-24`} />
             </div>
-            <label className="flex items-center gap-2 text-sm text-[var(--color-fg)]">
+            <label className="flex items-center gap-2 text-sm text-foreground">
               <input type="checkbox" name="featured" />
               Featured
             </label>
           </div>
           <button
             type="submit"
-            className="rounded-md bg-[var(--color-teal)] px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
+            className="rounded-md bg-(--color-teal) px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90"
           >
             Add project
           </button>
