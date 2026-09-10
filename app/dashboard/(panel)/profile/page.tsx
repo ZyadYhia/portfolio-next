@@ -1,5 +1,6 @@
 import { getProfile } from "@/lib/queries";
 import { updateProfile } from "../../actions";
+import CvUpload from "@/components/dashboard/CvUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -53,10 +54,6 @@ export default async function ProfilePage() {
             <input id="phone" name="phone" defaultValue={profile.phone} className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className={labelClass} htmlFor="resume_url">Resume URL</label>
-            <input id="resume_url" name="resume_url" defaultValue={profile.resume_url} className={inputClass} />
-          </div>
-          <div className="space-y-1.5">
             <label className={labelClass} htmlFor="linkedin_url">LinkedIn URL</label>
             <input id="linkedin_url" name="linkedin_url" defaultValue={profile.linkedin_url} className={inputClass} />
           </div>
@@ -73,6 +70,7 @@ export default async function ProfilePage() {
           Save changes
         </button>
       </form>
+      <CvUpload />
     </div>
   );
 }

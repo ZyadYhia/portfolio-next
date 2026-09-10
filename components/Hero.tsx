@@ -26,7 +26,7 @@ export default function Hero({ profile }: { readonly profile: Profile }) {
           Get in touch
         </a>
         <a
-          href="/Zyad_Yhia_CV.pdf"
+          href="/cv"
           download="Zyad_Yhia_CV.pdf"
           className="inline-flex items-center gap-2 rounded-md border border-(--color-border) px-5 py-2.5 text-sm font-medium text-foreground transition hover:border-(--color-teal) hover:text-(--color-teal) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-teal)"
         >

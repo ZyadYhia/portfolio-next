@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { timingSafeEqual } from "node:crypto";
 import { getDb } from "@/lib/db";
-import { COOKIE_NAME, createSessionToken } from "@/lib/session";
+import { COOKIE_NAME, createSessionToken, verifySessionToken } from "@/lib/session";
+import { discardCv, MAX_CV_BYTES, saveCv, validateCv } from "@/lib/cv-storage";
 
 function safeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -65,11 +66,14 @@ export async function logout() {
 // ---------- Profile ----------
 
 export async function updateProfile(formData: FormData) {
+  if (!await verifySessionToken((await cookies()).get(COOKIE_NAME)?.value)) {
+    redirect("/dashboard/login");
+  }
   const db = await getDb();
   await db.execute({
     sql: `UPDATE profile SET name=:name, title=:title, tagline=:tagline, bio=:bio,
           location=:location, email=:email, phone=:phone,
-          linkedin_url=:linkedin_url, github_url=:github_url, resume_url=:resume_url
+          linkedin_url=:linkedin_url, github_url=:github_url
           WHERE id = 1`,
     args: {
       name: str(formData, "name"),
@@ -81,11 +85,48 @@ export async function updateProfile(formData: FormData) {
       phone: str(formData, "phone"),
       linkedin_url: str(formData, "linkedin_url"),
       github_url: str(formData, "github_url"),
-      resume_url: str(formData, "resume_url"),
     },
   });
   revalidatePath("/");
   revalidatePath("/dashboard/profile");
+}
+
+export async function uploadCv(
+  _previous: { error: string; success: string },
+  formData: FormData,
+) {
+  if (!await verifySessionToken((await cookies()).get(COOKIE_NAME)?.value)) {
+    return { error: "Your session has expired. Sign in again to upload your CV.", success: "" };
+  }
+  const file = formData.get("cv");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Please choose a PDF file.", success: "" };
+  }
+  if (file.size > MAX_CV_BYTES) return { error: "The PDF must be 3 MB or smaller.", success: "" };
+  if (process.env.VERCEL && !process.env.BLOB_READ_WRITE_TOKEN) {
+    return { error: "Connect a public Vercel Blob store to this project, then redeploy to enable CV uploads.", success: "" };
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const error = validateCv(file, bytes);
+  if (error) return { error, success: "" };
+
+  let savedUrl: string | undefined;
+  try {
+    const db = await getDb();
+    savedUrl = await saveCv(bytes);
+    const result = await db.execute({
+      sql: "UPDATE profile SET resume_url = ? WHERE id = 1",
+      args: [savedUrl],
+    });
+    if (result.rowsAffected !== 1) throw new Error("Profile not found");
+  } catch (error) {
+    if (savedUrl) await discardCv(savedUrl).catch(() => {});
+    console.error("CV upload failed", error);
+    return { error: "Could not save your CV. Please try again. Your current CV has not changed.", success: "" };
+  }
+  revalidatePath("/");
+  revalidatePath("/dashboard/profile");
+  return { error: "", success: "CV uploaded. Visitors can now download your new CV." };
 }
 
 // ---------- Experience ----------
